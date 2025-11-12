@@ -1,24 +1,24 @@
-# ProjektJS
+# Projekt JS
 Projekt JavaScript
 
 Aplikacja społecznościowa (np. uproszczona wersja Facebooka lub Twittera) - pozwala na dodawanie wpisów, obserwowanie innych użytkowników, polubienia, komentarze.
 
-Wymagania funkcjonalne (MVP):
+- Wymagania funkcjonalne (MVP):
 
-Rejestracja i logowanie użytkownika
+- Rejestracja i logowanie użytkownika
 
-Możliwość edycji podstawowych danych profilu
+- Możliwość edycji podstawowych danych profilu
 
-Dodawanie postów tekstowych
+- Dodawanie postów tekstowych
 
-Wyświetlanie postów innych użytkowników
+- Wyświetlanie postów innych użytkowników
 
-Obserwowanie wybranych użytkowników
+- Obserwowanie wybranych użytkowników
 
-Wyświetlanie strony z postami obserwowanych użytkowników
+- Wyświetlanie strony z postami obserwowanych użytkowników
 
-Lajkowanie postów
+- Lajkowanie postów
 
-Dodawanie komentarzy do postów
+- Dodawanie komentarzy do postów
 
-Usuwanie własnych postów i komentarzy
+- Usuwanie własnych postów i komentarzy
