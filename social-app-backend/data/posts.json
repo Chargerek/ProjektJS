@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "content": "Dziś piękny dzień!",
+    "likes": [
+      2
+    ],
+    "createdAt": "2025-11-11T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "userId": 2,
+    "content": "Uczę się JavaScriptu 🚀",
+    "likes": [],
+    "createdAt": "2025-11-11T11:30:00Z"
+  },
+  {
+    "id": 3,
+    "userId": 1,
+    "content": "To jest mój pierwszy post!",
+    "likes": [],
+    "createdAt": "2025-11-11T15:01:26.249Z"
+  }
+]

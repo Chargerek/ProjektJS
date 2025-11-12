@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "postId": 1,
+    "userId": 2,
+    "content": "Fajnie!",
+    "createdAt": "2025-11-11T10:05:00Z"
+  },
+  {
+    "id": 2,
+    "postId": 1,
+    "userId": 1,
+    "content": "Super post!",
+    "createdAt": "2025-11-11T15:06:07.632Z"
+  }
+]
