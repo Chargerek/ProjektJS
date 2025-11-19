@@ -1,0 +1,27 @@
+.post-list {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.post-list h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.loading,
+.error,
+.no-posts {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+.no-posts {
+  color: #666;
+}
+

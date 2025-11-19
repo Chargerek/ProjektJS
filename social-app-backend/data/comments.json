@@ -12,5 +12,12 @@
     "userId": 1,
     "content": "Super post!",
     "createdAt": "2025-11-11T15:06:07.632Z"
+  },
+  {
+    "id": 3,
+    "postId": 1,
+    "userId": 1,
+    "content": "Szkoda że nie w polsce",
+    "createdAt": "2025-11-19T22:06:03.545Z"
   }
 ]

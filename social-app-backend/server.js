@@ -37,11 +37,18 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 
+// Middleware do obsługi błędów
+const errorHandler = require('./middleware/errorHandler');
+
 // Obsługa błędów 404 - musi być na końcu, po wszystkich routach
 app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+  res.status(404).json({ error: 'Endpoint not found', message: `Ścieżka ${req.path} nie istnieje` });
 });
+
+// Middleware obsługi błędów - MUSI być ostatni
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✅ Serwer działa na http://localhost:${PORT}`);
+  console.log(`📝 API dostępne pod: http://localhost:${PORT}/api`);
 });
