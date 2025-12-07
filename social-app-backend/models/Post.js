@@ -12,29 +12,63 @@
  * @property {string} [image] - URL do obrazka (opcjonalne)
  */
 
+const Joi = require('joi');
+
+// Schemat walidacji dla tworzenia posta
+const postCreateSchema = Joi.object({
+  userId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'userId musi być liczbą',
+      'number.integer': 'userId musi być liczbą całkowitą',
+      'number.positive': 'userId musi być liczbą dodatnią',
+      'any.required': 'userId jest wymagane'
+    }),
+  content: Joi.string()
+    .trim()
+    .min(1)
+    .max(1000)
+    .required()
+    .messages({
+      'string.empty': 'Content nie może być pusty',
+      'string.min': 'Content nie może być pusty',
+      'string.max': 'Content nie może przekraczać 1000 znaków',
+      'any.required': 'Content jest wymagany'
+    })
+});
+
+// Schemat walidacji dla aktualizacji posta
+const postUpdateSchema = Joi.object({
+  content: Joi.string()
+    .trim()
+    .min(1)
+    .max(1000)
+    .optional()
+    .messages({
+      'string.empty': 'Content nie może być pusty',
+      'string.min': 'Content nie może być pusty',
+      'string.max': 'Content nie może przekraczać 1000 znaków',
+      'string.base': 'Content musi być stringiem'
+    })
+});
+
 /**
  * Walidacja danych posta przy tworzeniu
  */
 const validatePostCreate = (postData) => {
-  const errors = [];
-
-  if (!postData.userId) {
-    errors.push('userId jest wymagane');
-  } else if (typeof postData.userId !== 'number' && isNaN(parseInt(postData.userId))) {
-    errors.push('userId musi być liczbą');
-  }
-
-  if (!postData.content || typeof postData.content !== 'string') {
-    errors.push('Content jest wymagany');
-  } else if (postData.content.trim().length === 0) {
-    errors.push('Content nie może być pusty');
-  } else if (postData.content.length > 1000) {
-    errors.push('Content nie może przekraczać 1000 znaków');
-  }
-
+  // Konwersja userId na liczbę jeśli jest stringiem
+  const dataToValidate = {
+    ...postData,
+    userId: typeof postData.userId === 'string' ? parseInt(postData.userId) : postData.userId
+  };
+  
+  const { error } = postCreateSchema.validate(dataToValidate, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -42,21 +76,11 @@ const validatePostCreate = (postData) => {
  * Walidacja danych posta przy aktualizacji
  */
 const validatePostUpdate = (postData) => {
-  const errors = [];
-
-  if (postData.content !== undefined) {
-    if (typeof postData.content !== 'string') {
-      errors.push('Content musi być stringiem');
-    } else if (postData.content.trim().length === 0) {
-      errors.push('Content nie może być pusty');
-    } else if (postData.content.length > 1000) {
-      errors.push('Content nie może przekraczać 1000 znaków');
-    }
-  }
-
+  const { error } = postUpdateSchema.validate(postData, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -64,4 +88,3 @@ module.exports = {
   validatePostCreate,
   validatePostUpdate
 };
-

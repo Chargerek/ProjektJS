@@ -13,7 +13,9 @@
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "joi": "^17.13.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

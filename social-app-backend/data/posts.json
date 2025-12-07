@@ -4,7 +4,8 @@
     "userId": 1,
     "content": "Dziś piękny dzień!",
     "likes": [
-      2
+      2,
+      1
     ],
     "createdAt": "2025-11-11T10:00:00Z"
   },
@@ -12,7 +13,9 @@
     "id": 2,
     "userId": 2,
     "content": "Uczę się JavaScriptu 🚀",
-    "likes": [],
+    "likes": [
+      1
+    ],
     "createdAt": "2025-11-11T11:30:00Z"
   },
   {

@@ -26,15 +26,83 @@ function writeData(filename, data) {
   }
 }
 
-// GET /api/posts — lista wszystkich postów
+// GET /api/posts — lista wszystkich postów z filtrowaniem, sortowaniem i paginacją
 router.get('/', (req, res, next) => {
   try {
-    const posts = readData('posts.json');
-    // Sortuj od najnowszych
-    const sortedPosts = posts.sort((a, b) => 
-      new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    res.json(sortedPosts);
+    let posts = readData('posts.json');
+    
+    // FILTROWANIE
+    // ?userId=1 - filtruj po autorze
+    if (req.query.userId) {
+      const userId = parseInt(req.query.userId);
+      posts = posts.filter(p => p.userId === userId);
+    }
+    
+    // ?search=tekst - wyszukaj w treści posta
+    if (req.query.search) {
+      const searchTerm = req.query.search.toLowerCase();
+      posts = posts.filter(p => 
+        p.content.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // ?minLikes=5 - minimum polubień
+    if (req.query.minLikes) {
+      const minLikes = parseInt(req.query.minLikes);
+      posts = posts.filter(p => (p.likes?.length || 0) >= minLikes);
+    }
+    
+    // SORTOWANIE
+    // ?sort=createdAt:desc lub ?sort=likes:asc
+    const sortParam = req.query.sort || 'createdAt:desc';
+    const [sortField, sortOrder] = sortParam.split(':');
+    const order = sortOrder === 'asc' ? 1 : -1;
+    
+    posts.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (sortField === 'createdAt') {
+        aVal = new Date(a.createdAt || 0);
+        bVal = new Date(b.createdAt || 0);
+      } else if (sortField === 'likes') {
+        aVal = a.likes?.length || 0;
+        bVal = b.likes?.length || 0;
+      } else if (sortField === 'userId') {
+        aVal = a.userId || 0;
+        bVal = b.userId || 0;
+      } else {
+        aVal = a[sortField] || '';
+        bVal = b[sortField] || '';
+      }
+      
+      if (aVal < bVal) return -1 * order;
+      if (aVal > bVal) return 1 * order;
+      return 0;
+    });
+    
+    // PAGINACJA
+    // ?page=1&limit=10
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    
+    const total = posts.length;
+    const totalPages = Math.ceil(total / limit);
+    
+    const paginatedPosts = posts.slice(startIndex, endIndex);
+    
+    res.json({
+      data: paginatedPosts,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     next(err);
   }

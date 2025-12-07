@@ -24,13 +24,78 @@ function writeData(filename, data) {
   }
 }
 
-// GET /api/users — lista użytkowników
+// GET /api/users — lista użytkowników z filtrowaniem, sortowaniem i paginacją
 router.get('/', (req, res, next) => {
   try {
-    const users = readData('users.json');
+    let users = readData('users.json');
+    
+    // FILTROWANIE
+    // ?search=tekst - wyszukaj w username/displayName
+    if (req.query.search) {
+      const searchTerm = req.query.search.toLowerCase();
+      users = users.filter(u => 
+        u.username.toLowerCase().includes(searchTerm) ||
+        (u.displayName && u.displayName.toLowerCase().includes(searchTerm))
+      );
+    }
+    
+    // ?minFollowing=5 - minimum obserwowanych
+    if (req.query.minFollowing) {
+      const minFollowing = parseInt(req.query.minFollowing);
+      users = users.filter(u => (u.following?.length || 0) >= minFollowing);
+    }
+    
+    // SORTOWANIE
+    // ?sort=username:asc lub ?sort=following:desc
+    const sortParam = req.query.sort || 'id:asc';
+    const [sortField, sortOrder] = sortParam.split(':');
+    const order = sortOrder === 'asc' ? 1 : -1;
+    
+    users.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (sortField === 'following') {
+        aVal = a.following?.length || 0;
+        bVal = b.following?.length || 0;
+      } else if (sortField === 'username' || sortField === 'displayName') {
+        aVal = (a[sortField] || '').toLowerCase();
+        bVal = (b[sortField] || '').toLowerCase();
+      } else {
+        aVal = a[sortField] || 0;
+        bVal = b[sortField] || 0;
+      }
+      
+      if (aVal < bVal) return -1 * order;
+      if (aVal > bVal) return 1 * order;
+      return 0;
+    });
+    
+    // PAGINACJA
+    // ?page=1&limit=10
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    
+    const total = users.length;
+    const totalPages = Math.ceil(total / limit);
+    
+    const paginatedUsers = users.slice(startIndex, endIndex);
+    
     // Nie zwracaj hasła
-    const sanitizedUsers = users.map(({ password, ...user }) => user);
-    res.json(sanitizedUsers);
+    const sanitizedUsers = paginatedUsers.map(({ password, ...user }) => user);
+    
+    res.json({
+      data: sanitizedUsers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    });
   } catch (err) {
     next(err);
   }

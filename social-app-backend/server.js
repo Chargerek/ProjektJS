@@ -7,9 +7,15 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Konfiguracja EJS
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 // Middleware
-app.use(cors()); // pozwala na żądania z innych domen (np. localhost:5173)
+app.use(cors()); // pozwala na żądania z innych domen
 app.use(express.json()); // żeby móc czytać JSON z req.body
+app.use(express.urlencoded({ extended: true })); // dla formularzy
+app.use(express.static(path.join(__dirname, 'public'))); // statyczne pliki (CSS, JS)
 
 // Ładowanie danych z plików (mock)
 const DATA_DIR = path.join(__dirname, 'data');
@@ -33,16 +39,29 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+
+// Frontend Routes
+const frontendRoutes = require('./routes/frontend');
+app.use('/', frontendRoutes);
 
 // Middleware do obsługi błędów
 const errorHandler = require('./middleware/errorHandler');
 
 // Obsługa błędów 404 - musi być na końcu, po wszystkich routach
 app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found', message: `Ścieżka ${req.path} nie istnieje` });
+  // Jeśli to request do API, zwróć JSON
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Endpoint not found', message: `Ścieżka ${req.path} nie istnieje` });
+  }
+  // W przeciwnym razie renderuj stronę błędu
+  res.status(404).render('error', { 
+    message: 'Strona nie została znaleziona',
+    error: { status: 404 }
+  });
 });
 
 // Middleware obsługi błędów - MUSI być ostatni

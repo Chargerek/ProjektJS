@@ -2,7 +2,7 @@
 node_modules/
 package-lock.json
 
-# Build output
+# Build outputs
 dist/
 build/
 
@@ -10,10 +10,14 @@ build/
 logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Environment variables
 .env
 .env.local
+.env.*.local
 
 # OS files
 .DS_Store
@@ -24,8 +28,16 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
 # Temporary files
 *.tmp
 *.temp
+
+# Data files (if needed to be ignored)
+# Uncomment if you don't want to commit data files
+# social-app-backend/data/*.json
 

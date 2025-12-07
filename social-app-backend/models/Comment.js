@@ -10,35 +10,74 @@
  * @property {string} [updatedAt] - Data ostatniej aktualizacji (ISO string, opcjonalne)
  */
 
+const Joi = require('joi');
+
+// Schemat walidacji dla tworzenia komentarza
+const commentCreateSchema = Joi.object({
+  postId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'postId musi być liczbą',
+      'number.integer': 'postId musi być liczbą całkowitą',
+      'number.positive': 'postId musi być liczbą dodatnią',
+      'any.required': 'postId jest wymagane'
+    }),
+  userId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': 'userId musi być liczbą',
+      'number.integer': 'userId musi być liczbą całkowitą',
+      'number.positive': 'userId musi być liczbą dodatnią',
+      'any.required': 'userId jest wymagane'
+    }),
+  content: Joi.string()
+    .trim()
+    .min(1)
+    .max(500)
+    .required()
+    .messages({
+      'string.empty': 'Content nie może być pusty',
+      'string.min': 'Content nie może być pusty',
+      'string.max': 'Content nie może przekraczać 500 znaków',
+      'any.required': 'Content jest wymagany'
+    })
+});
+
+// Schemat walidacji dla aktualizacji komentarza
+const commentUpdateSchema = Joi.object({
+  content: Joi.string()
+    .trim()
+    .min(1)
+    .max(500)
+    .optional()
+    .messages({
+      'string.empty': 'Content nie może być pusty',
+      'string.min': 'Content nie może być pusty',
+      'string.max': 'Content nie może przekraczać 500 znaków',
+      'string.base': 'Content musi być stringiem'
+    })
+});
+
 /**
  * Walidacja danych komentarza przy tworzeniu
  */
 const validateCommentCreate = (commentData) => {
-  const errors = [];
-
-  if (!commentData.postId) {
-    errors.push('postId jest wymagane');
-  } else if (typeof commentData.postId !== 'number' && isNaN(parseInt(commentData.postId))) {
-    errors.push('postId musi być liczbą');
-  }
-
-  if (!commentData.userId) {
-    errors.push('userId jest wymagane');
-  } else if (typeof commentData.userId !== 'number' && isNaN(parseInt(commentData.userId))) {
-    errors.push('userId musi być liczbą');
-  }
-
-  if (!commentData.content || typeof commentData.content !== 'string') {
-    errors.push('Content jest wymagany');
-  } else if (commentData.content.trim().length === 0) {
-    errors.push('Content nie może być pusty');
-  } else if (commentData.content.length > 500) {
-    errors.push('Content nie może przekraczać 500 znaków');
-  }
-
+  // Konwersja ID na liczby jeśli są stringami
+  const dataToValidate = {
+    ...commentData,
+    postId: typeof commentData.postId === 'string' ? parseInt(commentData.postId) : commentData.postId,
+    userId: typeof commentData.userId === 'string' ? parseInt(commentData.userId) : commentData.userId
+  };
+  
+  const { error } = commentCreateSchema.validate(dataToValidate, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -46,21 +85,11 @@ const validateCommentCreate = (commentData) => {
  * Walidacja danych komentarza przy aktualizacji
  */
 const validateCommentUpdate = (commentData) => {
-  const errors = [];
-
-  if (commentData.content !== undefined) {
-    if (typeof commentData.content !== 'string') {
-      errors.push('Content musi być stringiem');
-    } else if (commentData.content.trim().length === 0) {
-      errors.push('Content nie może być pusty');
-    } else if (commentData.content.length > 500) {
-      errors.push('Content nie może przekraczać 500 znaków');
-    }
-  }
-
+  const { error } = commentUpdateSchema.validate(commentData, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -68,4 +97,3 @@ module.exports = {
   validateCommentCreate,
   validateCommentUpdate
 };
-

@@ -1,0 +1,83 @@
+<%- include('partials/header', { title: 'Posty - Social App', activeTab: 'posts' }) %>
+
+<div class="container">
+    <div class="page-header">
+        <h2>Posty</h2>
+        
+        <!-- Filtry i sortowanie -->
+        <form method="GET" action="/" class="filters-form">
+            <div class="filters-row">
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Szukaj w postach..." 
+                    value="<%= filters.search %>"
+                    class="filter-input"
+                >
+                <select name="userId" class="filter-select">
+                    <option value="">Wszyscy autorzy</option>
+                    <% allUsers.forEach(user => { %>
+                        <option value="<%= user.id %>" <%= filters.userId == user.id ? 'selected' : '' %>>
+                            <%= user.displayName || user.username %>
+                        </option>
+                    <% }); %>
+                </select>
+                <select name="sort" class="filter-select">
+                    <option value="createdAt:desc" <%= filters.sort === 'createdAt:desc' ? 'selected' : '' %>>Najnowsze</option>
+                    <option value="createdAt:asc" <%= filters.sort === 'createdAt:asc' ? 'selected' : '' %>>Najstarsze</option>
+                    <option value="likes:desc" <%= filters.sort === 'likes:desc' ? 'selected' : '' %>>Najbardziej polubione</option>
+                    <option value="likes:asc" <%= filters.sort === 'likes:asc' ? 'selected' : '' %>>Najmniej polubione</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Filtruj</button>
+                <a href="/" class="btn btn-secondary">Wyczyść</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista postów -->
+    <div class="posts-list">
+        <% if (posts.length === 0) { %>
+            <div class="empty-state">Brak postów do wyświetlenia</div>
+        <% } else { %>
+            <% posts.forEach(post => { %>
+                <div class="post-card" data-post-id="<%= post.id %>">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <span class="author-name">
+                                <%= users[post.userId] ? (users[post.userId].displayName || users[post.userId].username) : `Użytkownik #${post.userId}` %>
+                            </span>
+                            <span class="post-date"><%= new Date(post.createdAt).toLocaleString('pl-PL') %></span>
+                        </div>
+                    </div>
+                    <div class="post-content"><%= post.content %></div>
+                    <div class="post-actions">
+                        <button class="like-btn" data-post-id="<%= post.id %>" data-user-id="1">
+                            ❤️ <span class="like-count"><%= post.likes?.length || 0 %></span>
+                        </button>
+                        <a href="/posts/<%= post.id %>" class="comments-link">
+                            💬 Komentarze
+                        </a>
+                    </div>
+                </div>
+            <% }); %>
+        <% } %>
+    </div>
+
+    <!-- Paginacja -->
+    <% if (pagination.totalPages > 1) { %>
+        <div class="pagination">
+            <% if (pagination.hasPrev) { %>
+                <a href="?page=<%= pagination.page - 1 %><%= filters.search ? '&search=' + filters.search : '' %><%= filters.userId ? '&userId=' + filters.userId : '' %><%= filters.sort ? '&sort=' + filters.sort : '' %>" class="pagination-btn">← Poprzednia</a>
+            <% } %>
+            <span class="pagination-info">
+                Strona <%= pagination.page %> z <%= pagination.totalPages %> (<%= pagination.total %> postów)
+            </span>
+            <% if (pagination.hasNext) { %>
+                <a href="?page=<%= pagination.page + 1 %><%= filters.search ? '&search=' + filters.search : '' %><%= filters.userId ? '&userId=' + filters.userId : '' %><%= filters.sort ? '&sort=' + filters.sort : '' %>" class="pagination-btn">Następna →</a>
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>
+

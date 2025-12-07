@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Social App' %></title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1>📱 Social App</h1>
+        <nav class="main-nav">
+            <a href="/" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'posts' ? 'active' : '' %>">Posty</a>
+            <a href="/users" class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'users' ? 'active' : '' %>">Użytkownicy</a>
+        </nav>
+    </header>
+    <main class="app-main">
+

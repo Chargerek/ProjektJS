@@ -12,38 +12,74 @@
  * @property {string} [avatar] - URL do avatara użytkownika (opcjonalne)
  */
 
+const Joi = require('joi');
+
+// Schemat walidacji dla rejestracji użytkownika
+const userRegistrationSchema = Joi.object({
+  username: Joi.string()
+    .min(3)
+    .max(20)
+    .pattern(/^[a-zA-Z0-9_]+$/)
+    .required()
+    .messages({
+      'string.empty': 'Username jest wymagane',
+      'string.min': 'Username musi mieć od 3 do 20 znaków',
+      'string.max': 'Username musi mieć od 3 do 20 znaków',
+      'string.pattern.base': 'Username może zawierać tylko litery, cyfry i podkreślniki',
+      'any.required': 'Username jest wymagane'
+    }),
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.empty': 'Email jest wymagany',
+      'string.email': 'Nieprawidłowy format email',
+      'any.required': 'Email jest wymagany'
+    }),
+  password: Joi.string()
+    .min(6)
+    .required()
+    .messages({
+      'string.empty': 'Hasło jest wymagane',
+      'string.min': 'Hasło musi mieć co najmniej 6 znaków',
+      'any.required': 'Hasło jest wymagane'
+    })
+});
+
+// Schemat walidacji dla aktualizacji profilu użytkownika
+const userUpdateSchema = Joi.object({
+  username: Joi.string()
+    .min(3)
+    .max(20)
+    .pattern(/^[a-zA-Z0-9_]+$/)
+    .optional()
+    .messages({
+      'string.min': 'Username musi mieć od 3 do 20 znaków',
+      'string.max': 'Username musi mieć od 3 do 20 znaków',
+      'string.pattern.base': 'Username może zawierać tylko litery, cyfry i podkreślniki'
+    }),
+  email: Joi.string()
+    .email()
+    .optional()
+    .messages({
+      'string.email': 'Nieprawidłowy format email'
+    }),
+  displayName: Joi.string()
+    .optional()
+    .messages({
+      'string.base': 'DisplayName musi być stringiem'
+    })
+});
+
 /**
  * Walidacja danych użytkownika przy rejestracji
  */
 const validateUserRegistration = (userData) => {
-  const errors = [];
-
-  if (!userData.username || typeof userData.username !== 'string') {
-    errors.push('Username jest wymagane');
-  } else if (userData.username.length < 3 || userData.username.length > 20) {
-    errors.push('Username musi mieć od 3 do 20 znaków');
-  } else if (!/^[a-zA-Z0-9_]+$/.test(userData.username)) {
-    errors.push('Username może zawierać tylko litery, cyfry i podkreślniki');
-  }
-
-  if (!userData.email || typeof userData.email !== 'string') {
-    errors.push('Email jest wymagany');
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userData.email)) {
-      errors.push('Nieprawidłowy format email');
-    }
-  }
-
-  if (!userData.password || typeof userData.password !== 'string') {
-    errors.push('Hasło jest wymagane');
-  } else if (userData.password.length < 6) {
-    errors.push('Hasło musi mieć co najmniej 6 znaków');
-  }
-
+  const { error } = userRegistrationSchema.validate(userData, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -51,34 +87,11 @@ const validateUserRegistration = (userData) => {
  * Walidacja danych użytkownika przy aktualizacji profilu
  */
 const validateUserUpdate = (userData) => {
-  const errors = [];
-
-  if (userData.username !== undefined) {
-    if (typeof userData.username !== 'string') {
-      errors.push('Username musi być stringiem');
-    } else if (userData.username.length < 3 || userData.username.length > 20) {
-      errors.push('Username musi mieć od 3 do 20 znaków');
-    }
-  }
-
-  if (userData.email !== undefined) {
-    if (typeof userData.email !== 'string') {
-      errors.push('Email musi być stringiem');
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(userData.email)) {
-        errors.push('Nieprawidłowy format email');
-      }
-    }
-  }
-
-  if (userData.displayName !== undefined && typeof userData.displayName !== 'string') {
-    errors.push('DisplayName musi być stringiem');
-  }
-
+  const { error } = userUpdateSchema.validate(userData, { abortEarly: false });
+  
   return {
-    isValid: errors.length === 0,
-    errors
+    isValid: !error,
+    errors: error ? error.details.map(detail => detail.message) : []
   };
 };
 
@@ -86,4 +99,3 @@ module.exports = {
   validateUserRegistration,
   validateUserUpdate
 };
-
