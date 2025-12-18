@@ -25,3 +25,55 @@
   color: #666;
 }
 
+.create-post-form {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.create-post-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.create-post-form textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.create-post-form textarea:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.create-post-form button {
+  padding: 10px 24px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.create-post-form button:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.create-post-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+

@@ -25,6 +25,7 @@
   gap: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
 }
 
 .user-card:hover {
@@ -82,5 +83,31 @@
 
 .no-users {
   color: #666;
+}
+
+.follow-btn {
+  padding: 8px 16px;
+  border: 1px solid #4CAF50;
+  border-radius: 20px;
+  background: white;
+  color: #4CAF50;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.follow-btn:hover {
+  background: #f0f8f0;
+}
+
+.follow-btn.following {
+  background: #4CAF50;
+  color: white;
+}
+
+.follow-btn.following:hover {
+  background: #45a049;
 }
 

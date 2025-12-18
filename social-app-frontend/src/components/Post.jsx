@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { postsAPI } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import './Post.css';
 
 function Post({ post, user, onLike, onDelete }) {
@@ -8,9 +9,9 @@ function Post({ post, user, onLike, onDelete }) {
   const [newComment, setNewComment] = useState('');
   const [commentUsers, setCommentUsers] = useState({});
   const [loadingComments, setLoadingComments] = useState(false);
-
-  // Mock userId - w prawdziwej aplikacji pobierasz z kontekstu/loginu
-  const currentUserId = 1;
+  const { user: currentUser } = useAuth();
+  
+  const currentUserId = currentUser?.id;
 
   useEffect(() => {
     if (showComments) {
@@ -46,11 +47,10 @@ function Post({ post, user, onLike, onDelete }) {
 
   const handleAddComment = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !currentUserId) return;
 
     try {
       await postsAPI.addComment(post.id, {
-        userId: currentUserId,
         content: newComment.trim(),
       });
       setNewComment('');
@@ -86,7 +86,7 @@ function Post({ post, user, onLike, onDelete }) {
         {canDelete && (
           <button
             className="delete-btn"
-            onClick={() => onDelete(post.id, currentUserId)}
+            onClick={() => onDelete(post.id)}
             title="Usuń post"
           >
             ×
@@ -99,7 +99,8 @@ function Post({ post, user, onLike, onDelete }) {
       <div className="post-actions">
         <button
           className={`like-btn ${isLiked ? 'liked' : ''}`}
-          onClick={() => onLike(post.id, currentUserId)}
+          onClick={() => currentUserId && onLike(post.id)}
+          disabled={!currentUserId}
         >
           ❤️ {post.likes?.length || 0}
         </button>
@@ -133,17 +134,19 @@ function Post({ post, user, onLike, onDelete }) {
                 </div>
               )}
 
-              <form onSubmit={handleAddComment} className="comment-form">
-                <textarea
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Dodaj komentarz..."
-                  rows="2"
-                />
-                <button type="submit" disabled={!newComment.trim()}>
-                  Wyślij
-                </button>
-              </form>
+              {currentUserId && (
+                <form onSubmit={handleAddComment} className="comment-form">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Dodaj komentarz..."
+                    rows="2"
+                  />
+                  <button type="submit" disabled={!newComment.trim()}>
+                    Wyślij
+                  </button>
+                </form>
+              )}
             </>
           )}
         </div>

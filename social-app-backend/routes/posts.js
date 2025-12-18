@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { validatePostCreate, validatePostUpdate } = require('../models/Post');
 const { validateCommentCreate } = require('../models/Comment');
+const { authenticate, optionalAuth } = require('../middleware/auth');
 
 // Funkcja pomocnicza do odczytu danych
 function readData(filename) {
@@ -27,7 +28,7 @@ function writeData(filename, data) {
 }
 
 // GET /api/posts — lista wszystkich postów z filtrowaniem, sortowaniem i paginacją
-router.get('/', (req, res, next) => {
+router.get('/', optionalAuth, (req, res, next) => {
   try {
     let posts = readData('posts.json');
     
@@ -129,9 +130,10 @@ router.get('/:id', (req, res, next) => {
 });
 
 // POST /api/posts — dodaj nowy post
-router.post('/', (req, res, next) => {
+router.post('/', authenticate, (req, res, next) => {
   try {
-    const { userId, content } = req.body;
+    const { content } = req.body;
+    const userId = req.user.id;
 
     // Walidacja
     const validation = validatePostCreate({ userId, content });
@@ -145,7 +147,7 @@ router.post('/', (req, res, next) => {
     const posts = readData('posts.json');
     const newPost = {
       id: posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1,
-      userId: parseInt(userId),
+      userId: userId,
       content: content.trim(),
       likes: [],
       createdAt: new Date().toISOString()
@@ -164,17 +166,11 @@ router.post('/', (req, res, next) => {
 });
 
 // PUT /api/posts/:id — aktualizuj post
-router.put('/:id', (req, res, next) => {
+router.put('/:id', authenticate, (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const { userId, content } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        error: 'Błąd walidacji',
-        details: ['userId jest wymagane'] 
-      });
-    }
+    const { content } = req.body;
+    const userId = req.user.id;
 
     // Walidacja content
     const validation = validatePostUpdate({ content });
@@ -196,7 +192,7 @@ router.put('/:id', (req, res, next) => {
     }
 
     // Sprawdź uprawnienia
-    if (posts[postIndex].userId !== parseInt(userId)) {
+    if (posts[postIndex].userId !== userId) {
       return res.status(403).json({ 
         error: 'Brak dostępu',
         message: 'Możesz edytować tylko swoje posty' 
@@ -218,19 +214,10 @@ router.put('/:id', (req, res, next) => {
 });
 
 // POST /api/posts/:id/like — lajkuj/odlajkuj post
-router.post('/:id/like', (req, res, next) => {
+router.post('/:id/like', authenticate, (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        error: 'Błąd walidacji',
-        details: ['userId jest wymagany'] 
-      });
-    }
-
-    const userIdNum = parseInt(userId);
+    const userIdNum = req.user.id;
     const posts = readData('posts.json');
     const postIndex = posts.findIndex(p => p.id === postId);
 
@@ -299,10 +286,11 @@ router.get('/:id/comments', (req, res, next) => {
 });
 
 // POST /api/posts/:id/comments — dodaj komentarz
-router.post('/:id/comments', (req, res, next) => {
+router.post('/:id/comments', authenticate, (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const { userId, content } = req.body;
+    const { content } = req.body;
+    const userId = req.user.id;
 
     // Sprawdź czy post istnieje
     const posts = readData('posts.json');
@@ -314,8 +302,8 @@ router.post('/:id/comments', (req, res, next) => {
       });
     }
 
-    // Walidacja komentarza
-    const validation = validateCommentCreate({ postId, userId, content });
+    // Walidacja komentarza (userId z tokena)
+    const validation = validateCommentCreate({ postId, userId: userId, content });
     if (!validation.isValid) {
       return res.status(400).json({ 
         error: 'Błąd walidacji',
@@ -327,7 +315,7 @@ router.post('/:id/comments', (req, res, next) => {
     const newComment = {
       id: comments.length > 0 ? Math.max(...comments.map(c => c.id)) + 1 : 1,
       postId,
-      userId: parseInt(userId),
+      userId: userId,
       content: content.trim(),
       createdAt: new Date().toISOString()
     };
@@ -345,17 +333,10 @@ router.post('/:id/comments', (req, res, next) => {
 });
 
 // DELETE /api/posts/:id — usuń post (tylko jeśli user to autor)
-router.delete('/:id', (req, res, next) => {
+router.delete('/:id', authenticate, (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const { userId } = req.body; // w praktyce: z tokena JWT, ale tu mock
-
-    if (!userId) {
-      return res.status(400).json({ 
-        error: 'Błąd walidacji',
-        details: ['userId jest wymagany'] 
-      });
-    }
+    const userId = req.user.id;
 
     const posts = readData('posts.json');
     const postIndex = posts.findIndex(p => p.id === postId);
@@ -368,7 +349,7 @@ router.delete('/:id', (req, res, next) => {
     }
 
     // Sprawdź, czy user jest właścicielem
-    if (posts[postIndex].userId !== parseInt(userId)) {
+    if (posts[postIndex].userId !== userId) {
       return res.status(403).json({ 
         error: 'Brak dostępu',
         message: 'Nie możesz usunąć cudzego posta' 
