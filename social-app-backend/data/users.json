@@ -5,7 +5,9 @@
     "email": "janek@example.com",
     "password": "haslo123",
     "displayName": "Jan K.",
-    "following": [2]
+    "following": [
+      2
+    ]
   },
   {
     "id": 2,
@@ -14,5 +16,16 @@
     "password": "test123",
     "displayName": "Anna M.",
     "following": []
+  },
+  {
+    "id": 3,
+    "username": "zajkos",
+    "email": "test@test.pl",
+    "password": "$2b$10$eV1z9N3OPzrTQR.Sc5UqCuM5LLNECOtTYXJdj5Dg3T7.YaCXX3cTS",
+    "displayName": "zajkos",
+    "following": [
+      2
+    ],
+    "createdAt": "2025-12-20T15:58:14.450Z"
   }
 ]

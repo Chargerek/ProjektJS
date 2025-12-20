@@ -28,7 +28,7 @@ function writeData(filename, data) {
 }
 
 // POST /api/auth/register
-router.post('/register', (req, res, next) => {
+router.post('/register', async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
