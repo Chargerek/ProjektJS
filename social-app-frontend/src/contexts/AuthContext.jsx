@@ -82,6 +82,15 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    try {
+      const userData = await authAPI.getMe();
+      setUser(userData);
+    } catch (err) {
+      console.error('Błąd odświeżania danych użytkownika:', err);
+    }
+  };
+
   const value = {
     user,
     token,
@@ -89,6 +98,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user
   };
 

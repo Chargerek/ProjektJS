@@ -137,3 +137,4 @@ function PostList() {
 
 export default PostList;
 
+// przerobic na vue, dodac baze 

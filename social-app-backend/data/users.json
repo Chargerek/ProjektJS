@@ -27,5 +27,28 @@
       2
     ],
     "createdAt": "2025-12-20T15:58:14.450Z"
+  },
+  {
+    "id": 4,
+    "username": "kacper",
+    "email": "kacper@wp.pl",
+    "password": "$2b$10$VtQYpK6u0AuAG6AMAeD0yORN93vJrbejznvCzdKv3lBQnCg3UTQli",
+    "displayName": "kacper",
+    "following": [
+      1
+    ],
+    "createdAt": "2025-12-21T11:01:54.420Z"
+  },
+  {
+    "id": 5,
+    "username": "123",
+    "email": "123@wp.pl",
+    "password": "$2b$10$ZpZsK.9Kiah0gIngJg1cVe0JYmrS8xORS9XOLmnhkmmRfbwdB3qLi",
+    "displayName": "123",
+    "following": [
+      1,
+      3
+    ],
+    "createdAt": "2025-12-21T11:35:53.893Z"
   }
 ]

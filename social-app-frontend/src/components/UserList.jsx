@@ -8,11 +8,26 @@ function UserList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [followingStates, setFollowingStates] = useState({});
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refreshUser } = useAuth();
 
   useEffect(() => {
     loadUsers();
   }, []);
+
+  useEffect(() => {
+    if (currentUser && users.length > 0) {
+      const states = {};
+      users.forEach(u => {
+        if (u.id === currentUser.id) {
+          states[u.id] = 'self';
+        } else {
+          const isFollowing = Array.isArray(currentUser.following) && currentUser.following.includes(u.id);
+          states[u.id] = isFollowing ? 'following' : 'not-following';
+        }
+      });
+      setFollowingStates(states);
+    }
+  }, [currentUser?.following, users]);
 
   const loadUsers = async () => {
     try {
@@ -49,11 +64,26 @@ function UserList() {
   const handleFollow = async (userId) => {
     if (!currentUser || userId === currentUser.id) return;
     
+    const wasFollowing = followingStates[userId] === 'following';
+    const newState = wasFollowing ? 'not-following' : 'following';
+    
+    setFollowingStates(prev => ({
+      ...prev,
+      [userId]: newState
+    }));
+    
     try {
+      // Synchronizuj z serwerem w tle (bez blokowania UI)
       await usersAPI.follow(userId);
-      // Odśwież listę użytkowników
-      loadUsers();
+      // Odśwież dane użytkownika z serwera (w tle)
+      refreshUser().catch(err => console.error('Błąd odświeżania użytkownika:', err));
     } catch (err) {
+      // Jeśli wystąpił błąd, cofnij zmiany
+      setFollowingStates(prev => ({
+        ...prev,
+        [userId]: wasFollowing ? 'following' : 'not-following'
+      }));
+      
       alert(err.message || 'Nie udało się wykonać akcji');
     }
   };
@@ -100,7 +130,7 @@ function UserList() {
                     className={`follow-btn ${isFollowing ? 'following' : ''}`}
                     onClick={() => handleFollow(user.id)}
                   >
-                    {isFollowing ? 'Obserwujesz' : 'Obserwuj'}
+                    {isFollowing ? 'Odobserwuj' : 'Obserwuj'}
                   </button>
                 )}
               </div>
