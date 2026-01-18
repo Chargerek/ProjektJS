@@ -14,7 +14,8 @@
     "userId": 2,
     "content": "Uczę się JavaScriptu 🚀",
     "likes": [
-      1
+      1,
+      5
     ],
     "createdAt": "2025-11-11T11:30:00Z"
   },
@@ -24,5 +25,12 @@
     "content": "To jest mój pierwszy post!",
     "likes": [],
     "createdAt": "2025-11-11T15:01:26.249Z"
+  },
+  {
+    "id": 4,
+    "userId": 3,
+    "content": "test",
+    "likes": [],
+    "createdAt": "2025-12-20T15:58:20.806Z"
   }
 ]

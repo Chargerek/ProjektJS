@@ -4,6 +4,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { validateUserUpdate } = require('../models/User');
+const { authenticate } = require('../middleware/auth');
 
 function readData(filename) {
   try {
@@ -124,12 +125,12 @@ router.get('/:id', (req, res, next) => {
 });
 
 // PUT /api/users/:id — edycja profilu
-router.put('/:id', (req, res, next) => {
+router.put('/:id', authenticate, (req, res, next) => {
   try {
     const userId = parseInt(req.params.id);
-    const { currentUserId, username, email, displayName } = req.body;
+    const { username, email, displayName } = req.body;
 
-    if (!currentUserId || parseInt(currentUserId) !== userId) {
+    if (req.user.id !== userId) {
       return res.status(403).json({ 
         error: 'Brak dostępu',
         message: 'Możesz edytować tylko swój profil' 
@@ -194,19 +195,10 @@ router.put('/:id', (req, res, next) => {
 });
 
 // POST /api/users/:id/follow — obserwuj/odobserwuj użytkownika
-router.post('/:id/follow', (req, res, next) => {
+router.post('/:id/follow', authenticate, (req, res, next) => {
   try {
     const targetUserId = parseInt(req.params.id);
-    const { userId } = req.body; // ID użytkownika, który chce obserwować
-
-    if (!userId) {
-      return res.status(400).json({ 
-        error: 'Błąd walidacji',
-        details: ['userId jest wymagany'] 
-      });
-    }
-
-    const followerId = parseInt(userId);
+    const followerId = req.user.id;
 
     if (followerId === targetUserId) {
       return res.status(400).json({ 

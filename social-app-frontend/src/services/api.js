@@ -5,13 +5,23 @@
 const API_BASE_URL = 'http://localhost:3000/api';
 
 /**
+ * Pobierz token z localStorage
+ */
+const getToken = () => {
+  return localStorage.getItem('token');
+};
+
+/**
  * Uniwersalna funkcja do wykonywania requestów
  */
 async function request(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const token = getToken();
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
@@ -26,6 +36,11 @@ async function request(endpoint, options = {}) {
     const data = await response.json();
 
     if (!response.ok) {
+      // Jeśli token jest nieprawidłowy, usuń go
+      if (response.status === 401 && token) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
       throw new Error(data.message || data.error || 'Wystąpił błąd');
     }
 
@@ -42,8 +57,8 @@ export const postsAPI = {
   getById: (id) => request(`/posts/${id}`),
   create: (postData) => request('/posts', { method: 'POST', body: postData }),
   update: (id, postData) => request(`/posts/${id}`, { method: 'PUT', body: postData }),
-  delete: (id, userId) => request(`/posts/${id}`, { method: 'DELETE', body: { userId } }),
-  like: (id, userId) => request(`/posts/${id}/like`, { method: 'POST', body: { userId } }),
+  delete: (id) => request(`/posts/${id}`, { method: 'DELETE' }),
+  like: (id) => request(`/posts/${id}/like`, { method: 'POST' }),
   getComments: (id) => request(`/posts/${id}/comments`),
   addComment: (id, commentData) => request(`/posts/${id}/comments`, { method: 'POST', body: commentData }),
 };
@@ -53,12 +68,13 @@ export const usersAPI = {
   getAll: () => request('/users'),
   getById: (id) => request(`/users/${id}`),
   update: (id, userData) => request(`/users/${id}`, { method: 'PUT', body: userData }),
-  follow: (id, userId) => request(`/users/${id}/follow`, { method: 'POST', body: { userId } }),
+  follow: (id) => request(`/users/${id}/follow`, { method: 'POST' }),
 };
 
 // Auth API
 export const authAPI = {
   register: (userData) => request('/auth/register', { method: 'POST', body: userData }),
   login: (credentials) => request('/auth/login', { method: 'POST', body: credentials }),
+  getMe: () => request('/auth/me'),
 };
 

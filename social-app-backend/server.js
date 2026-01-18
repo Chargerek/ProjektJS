@@ -12,7 +12,10 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware
-app.use(cors()); // pozwala na żądania z innych domen
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+})); // pozwala na żądania z innych domen
 app.use(express.json()); // żeby móc czytać JSON z req.body
 app.use(express.urlencoded({ extended: true })); // dla formularzy
 app.use(express.static(path.join(__dirname, 'public'))); // statyczne pliki (CSS, JS)
@@ -43,10 +46,6 @@ const postRoutes = require('./routes/posts');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
-
-// Frontend Routes
-const frontendRoutes = require('./routes/frontend');
-app.use('/', frontendRoutes);
 
 // Middleware do obsługi błędów
 const errorHandler = require('./middleware/errorHandler');

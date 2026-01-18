@@ -26,5 +26,12 @@
     "userId": 1,
     "content": "Bajo jajo",
     "createdAt": "2025-12-07T17:05:57.987Z"
+  },
+  {
+    "id": 5,
+    "postId": 2,
+    "userId": 5,
+    "content": "hjg",
+    "createdAt": "2025-12-21T11:40:52.165Z"
   }
 ]
