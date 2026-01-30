@@ -71,5 +71,8 @@ social-app-frontend/
 └── package.json                 # Zależności frontendu
 
 ```
-
-
+## Jak uruchomić aplikacje:
+Po pobraniu projektu włączaamy 2 terminale
+* W pierwszym terminalu przechodzimy do folderu social-app-backend i uzywamy następujących komend: "npm install" następnie "npm run dev"
+* W drugim terminalu przechodzimy do folderu social-app-frontend i uzywamy następujących komend: "npm install" następnie "npm run dev"
+* Przechodzimy do przeglądarki i wklejamy ten adres: http://localhost:5173/
