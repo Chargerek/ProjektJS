@@ -3,28 +3,56 @@
 }
 
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  /* Light Theme */
+  --bg-color: #f0f2f5;
+  --header-bg: #ffffff;
+  --text-color: #1c1e21;
+  --text-secondary: #65676b;
+  --card-bg: #ffffff;
+  --border-color: #dddfe2;
+  --primary-color: #1877f2;
+  --primary-hover: #166fe5;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+}
 
-  color: #213547;
-  background-color: #f5f5f5;
+[data-theme='dark'] {
+  --bg-color: #0f1011;
+  --header-bg: #1e1f20;
+  --text-color: #e4e6eb;
+  --text-secondary: #b0b3b8;
+  --card-bg: #1e1f20;
+  --border-color: #3e4042;
+  --primary-color: #2d88ff;
+  --primary-hover: #4599ff;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+[data-theme='cashmere'] {
+  --bg-color: #faf0e6;
+  --header-bg: #ffffff;
+  --text-color: #5d4037;
+  --text-secondary: #8d6e63;
+  --card-bg: #fffaf0;
+  --border-color: #d7ccc8;
+  --primary-color: #d2b48c;
+  --primary-hover: #c19a6b;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
 }
 

@@ -15,7 +15,7 @@ const authenticate = (req, res, next) => {
   try {
     // Pobierz token z nagłówka Authorization
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         error: 'Nieautoryzowany',
@@ -27,7 +27,7 @@ const authenticate = (req, res, next) => {
 
     // Weryfikuj token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     // Dodaj dane użytkownika do requestu
     req.user = decoded;
     next();
@@ -54,7 +54,7 @@ const authenticate = (req, res, next) => {
 const optionalAuth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
@@ -65,7 +65,7 @@ const optionalAuth = (req, res, next) => {
         req.user = null;
       }
     }
-    
+
     next();
   } catch (err) {
     next(err);

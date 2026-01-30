@@ -1,10 +1,26 @@
 .post {
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text-color);
+}
+
+.post-image-container {
+  margin-top: 15px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.post-image {
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  background: var(--bg-color);
+  display: block;
 }
 
 .post-header {
@@ -14,32 +30,98 @@
   margin-bottom: 12px;
 }
 
+.post-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .post-author {
   display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.author-avatar-link {
+  text-decoration: none;
+}
+
+.author-avatar-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-weight: bold;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.author-avatar-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.author-info {
+  display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .author-name {
   font-weight: 600;
-  color: #333;
-  font-size: 16px;
+  color: var(--primary-color);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.author-name:hover {
+  text-decoration: underline;
 }
 
 .post-date {
   font-size: 12px;
-  color: #999;
+  color: var(--text-secondary);
 }
 
-.delete-btn {
+.post-follow-btn {
+  background: none;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+
+.post-follow-btn.is-following {
+  background: var(--primary-color);
+  color: white;
+}
+
+.post-follow-btn:hover {
+  background: var(--primary-color);
+  color: white;
+  opacity: 0.9;
+}
+
+.delete-btn,
+.edit-btn {
   background: transparent;
   border: none;
-  font-size: 24px;
+  font-size: 20px;
   color: #999;
   cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
+  padding: 4px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -50,6 +132,11 @@
 .delete-btn:hover {
   background: #f5f5f5;
   color: #d32f2f;
+}
+
+.edit-btn:hover {
+  background: #f5f5f5;
+  color: #1976d2;
 }
 
 .post-content {
@@ -179,3 +266,110 @@
   cursor: not-allowed;
 }
 
+.edit-post-section {
+  margin-bottom: 16px;
+}
+
+.edit-post-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 16px;
+  resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.edit-post-textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.edit-post-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.save-btn,
+.cancel-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.save-btn {
+  background: #4CAF50;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #45a049;
+}
+
+.cancel-btn {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background: #e0e0e0;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.edit-comment-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-comment-btn:hover {
+  background: #f5f5f5;
+  color: #1976d2;
+}
+
+.edit-comment-section {
+  margin: 8px 0;
+}
+
+.edit-comment-textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 60px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+
+.edit-comment-textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.edit-comment-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}

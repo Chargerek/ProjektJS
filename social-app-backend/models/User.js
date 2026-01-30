@@ -65,9 +65,33 @@ const userUpdateSchema = Joi.object({
       'string.email': 'Nieprawidłowy format email'
     }),
   displayName: Joi.string()
+    .allow('', null)
     .optional()
     .messages({
       'string.base': 'DisplayName musi być stringiem'
+    }),
+  bio: Joi.string()
+    .max(500)
+    .allow('', null)
+    .optional()
+    .messages({
+      'string.max': 'Biogram nie może przekraczać 500 znaków'
+    }),
+  avatar: Joi.string()
+    .allow('', null)
+    .optional()
+    .messages({
+      'string.base': 'Avatar musi być stringiem'
+    }),
+  avatarPosition: Joi.number()
+    .integer()
+    .min(0)
+    .max(100)
+    .optional()
+    .messages({
+      'number.base': 'Pozycja awatara musi być liczbą',
+      'number.min': 'Pozycja musi być między 0 a 100',
+      'number.max': 'Pozycja musi być między 0 a 100'
     })
 });
 
@@ -76,7 +100,7 @@ const userUpdateSchema = Joi.object({
  */
 const validateUserRegistration = (userData) => {
   const { error } = userRegistrationSchema.validate(userData, { abortEarly: false });
-  
+
   return {
     isValid: !error,
     errors: error ? error.details.map(detail => detail.message) : []
@@ -88,7 +112,7 @@ const validateUserRegistration = (userData) => {
  */
 const validateUserUpdate = (userData) => {
   const { error } = userUpdateSchema.validate(userData, { abortEarly: false });
-  
+
   return {
     isValid: !error,
     errors: error ? error.details.map(detail => detail.message) : []

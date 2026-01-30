@@ -1,100 +1,134 @@
 // routes/posts.js
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
 const { validatePostCreate, validatePostUpdate } = require('../models/Post');
-const { validateCommentCreate } = require('../models/Comment');
+const { validateCommentCreate, validateCommentUpdate } = require('../models/Comment');
 const { authenticate, optionalAuth } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
-// Funkcja pomocnicza do odczytu danych
-function readData(filename) {
+// Pomocnicza funkcja do tworzenia powiadomień
+function createNotification(userId, actorId, type, postId = null) {
+  // Nie twórz powiadomienia, jeśli aktor to właściciel (np. lajkuje własny post)
+  if (userId === actorId) return;
+
   try {
-    const data = fs.readFileSync(path.join(__dirname, '../data', filename), 'utf8');
-    return JSON.parse(data);
+    db.prepare(`
+      INSERT INTO notifications (userId, actorId, type, postId)
+      VALUES (?, ?, ?, ?)
+    `).run(userId, actorId, type, postId);
   } catch (err) {
-    console.error(`Błąd odczytu pliku ${filename}:`, err);
-    throw new Error(`Nie udało się odczytać danych z pliku ${filename}`);
+    console.error('Błąd tworzenia powiadomienia:', err);
   }
 }
-
-function writeData(filename, data) {
-  try {
-    fs.writeFileSync(path.join(__dirname, '../data', filename), JSON.stringify(data, null, 2));
-  } catch (err) {
-    console.error(`Błąd zapisu do pliku ${filename}:`, err);
-    throw new Error(`Nie udało się zapisać danych do pliku ${filename}`);
-  }
-}
+const db = require('../database');
 
 // GET /api/posts — lista wszystkich postów z filtrowaniem, sortowaniem i paginacją
 router.get('/', optionalAuth, (req, res, next) => {
   try {
-    let posts = readData('posts.json');
-    
+    let query = `
+      SELECT 
+        p.id,
+        p.userId,
+        p.content,
+        p.imageUrl,
+        p.createdAt,
+        p.updatedAt,
+        COUNT(DISTINCT c.id) as commentCount
+      FROM posts p
+      LEFT JOIN comments c ON p.id = c.postId
+      WHERE 1=1
+    `;
+    const params = [];
+
     // FILTROWANIE
     // ?userId=1 - filtruj po autorze
     if (req.query.userId) {
-      const userId = parseInt(req.query.userId);
-      posts = posts.filter(p => p.userId === userId);
+      query += ' AND p.userId = ?';
+      params.push(parseInt(req.query.userId));
     }
-    
+
     // ?search=tekst - wyszukaj w treści posta
     if (req.query.search) {
-      const searchTerm = req.query.search.toLowerCase();
-      posts = posts.filter(p => 
-        p.content.toLowerCase().includes(searchTerm)
-      );
+      query += ' AND LOWER(p.content) LIKE ?';
+      params.push(`%${req.query.search.toLowerCase()}%`);
     }
-    
+
+    query += ' GROUP BY p.id';
+
     // ?minLikes=5 - minimum polubień
     if (req.query.minLikes) {
       const minLikes = parseInt(req.query.minLikes);
-      posts = posts.filter(p => (p.likes?.length || 0) >= minLikes);
+      query += ` HAVING (SELECT COUNT(*) FROM post_likes WHERE postId = p.id) >= ?`;
+      params.push(minLikes);
     }
-    
+
     // SORTOWANIE
-    // ?sort=createdAt:desc lub ?sort=likes:asc
     const sortParam = req.query.sort || 'createdAt:desc';
     const [sortField, sortOrder] = sortParam.split(':');
-    const order = sortOrder === 'asc' ? 1 : -1;
-    
-    posts.sort((a, b) => {
-      let aVal, bVal;
-      
-      if (sortField === 'createdAt') {
-        aVal = new Date(a.createdAt || 0);
-        bVal = new Date(b.createdAt || 0);
-      } else if (sortField === 'likes') {
-        aVal = a.likes?.length || 0;
-        bVal = b.likes?.length || 0;
-      } else if (sortField === 'userId') {
-        aVal = a.userId || 0;
-        bVal = b.userId || 0;
-      } else {
-        aVal = a[sortField] || '';
-        bVal = b[sortField] || '';
-      }
-      
-      if (aVal < bVal) return -1 * order;
-      if (aVal > bVal) return 1 * order;
-      return 0;
-    });
-    
+    const order = sortOrder === 'asc' ? 'ASC' : 'DESC';
+
+    let orderBy = 'p.createdAt DESC';
+    if (sortField === 'createdAt') {
+      orderBy = `p.createdAt ${order}`;
+    } else if (sortField === 'likes') {
+      orderBy = `(SELECT COUNT(*) FROM post_likes WHERE postId = p.id) ${order}`;
+    } else if (sortField === 'userId') {
+      orderBy = `p.userId ${order}`;
+    }
+
+    query += ` ORDER BY ${orderBy}`;
+
     // PAGINACJA
-    // ?page=1&limit=10
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    
-    const total = posts.length;
+    const offset = (page - 1) * limit;
+
+    query += ' LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    // Pobierz posty
+    const posts = db.prepare(query).all(...params);
+
+    // Pobierz polubienia dla każdego posta
+    const getLikes = db.prepare(`
+      SELECT userId FROM post_likes WHERE postId = ?
+    `);
+
+    const postsWithLikes = posts.map(post => {
+      const likes = getLikes.all(post.id).map(row => row.userId);
+      return {
+        ...post,
+        likes,
+        commentCount: post.commentCount || 0
+      };
+    });
+
+    // Pobierz całkowitą liczbę (dla paginacji)
+    let countQuery = 'SELECT COUNT(DISTINCT p.id) as total FROM posts p WHERE 1=1';
+    const countParams = [];
+
+    if (req.query.userId) {
+      countQuery += ' AND p.userId = ?';
+      countParams.push(parseInt(req.query.userId));
+    }
+
+    if (req.query.search) {
+      countQuery += ' AND LOWER(p.content) LIKE ?';
+      countParams.push(`%${req.query.search.toLowerCase()}%`);
+    }
+
+    if (req.query.minLikes) {
+      const minLikes = parseInt(req.query.minLikes);
+      countQuery += ` AND (SELECT COUNT(*) FROM post_likes WHERE postId = p.id) >= ?`;
+      countParams.push(minLikes);
+    }
+
+    const totalResult = db.prepare(countQuery).get(...countParams);
+    const total = totalResult.total;
     const totalPages = Math.ceil(total / limit);
-    
-    const paginatedPosts = posts.slice(startIndex, endIndex);
-    
+
     res.json({
-      data: paginatedPosts,
+      data: postsWithLikes,
       pagination: {
         page,
         limit,
@@ -113,17 +147,32 @@ router.get('/', optionalAuth, (req, res, next) => {
 router.get('/:id', (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const posts = readData('posts.json');
-    const post = posts.find(p => p.id === postId);
+    const post = db.prepare(`
+      SELECT * FROM posts WHERE id = ?
+    `).get(postId);
 
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
-    res.json(post);
+    // Pobierz polubienia
+    const likes = db.prepare(`
+      SELECT userId FROM post_likes WHERE postId = ?
+    `).all(postId).map(row => row.userId);
+
+    // Pobierz liczbę komentarzy
+    const commentCount = db.prepare(`
+      SELECT COUNT(*) as count FROM comments WHERE postId = ?
+    `).get(postId);
+
+    res.json({
+      ...post,
+      likes,
+      commentCount: commentCount.count || 0
+    });
   } catch (err) {
     next(err);
   }
@@ -132,33 +181,40 @@ router.get('/:id', (req, res, next) => {
 // POST /api/posts — dodaj nowy post
 router.post('/', authenticate, (req, res, next) => {
   try {
-    const { content } = req.body;
+    const { content, image } = req.body;
     const userId = req.user.id;
 
     // Walidacja
     const validation = validatePostCreate({ userId, content });
     if (!validation.isValid) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Błąd walidacji',
-        details: validation.errors 
+        details: validation.errors
       });
     }
 
-    const posts = readData('posts.json');
-    const newPost = {
-      id: posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1,
-      userId: userId,
-      content: content.trim(),
-      likes: [],
-      createdAt: new Date().toISOString()
-    };
+    const insertPost = db.prepare(`
+      INSERT INTO posts (userId, content, imageUrl, createdAt)
+      VALUES (?, ?, ?, ?)
+    `);
 
-    posts.push(newPost);
-    writeData('posts.json', posts);
+    const result = insertPost.run(
+      userId,
+      content.trim(),
+      image || null,
+      new Date().toISOString()
+    );
+
+    const newPostId = result.lastInsertRowid;
+    const newPost = db.prepare('SELECT * FROM posts WHERE id = ?').get(newPostId);
 
     res.status(201).json({
       message: 'Post dodany',
-      post: newPost
+      post: {
+        ...newPost,
+        likes: [],
+        commentCount: 0
+      }
     });
   } catch (err) {
     next(err);
@@ -175,38 +231,47 @@ router.put('/:id', authenticate, (req, res, next) => {
     // Walidacja content
     const validation = validatePostUpdate({ content });
     if (!validation.isValid) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Błąd walidacji',
-        details: validation.errors 
+        details: validation.errors
       });
     }
 
-    const posts = readData('posts.json');
-    const postIndex = posts.findIndex(p => p.id === postId);
-
-    if (postIndex === -1) {
-      return res.status(404).json({ 
+    // Sprawdź czy post istnieje
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) {
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
     // Sprawdź uprawnienia
-    if (posts[postIndex].userId !== userId) {
-      return res.status(403).json({ 
+    if (post.userId !== userId) {
+      return res.status(403).json({
         error: 'Brak dostępu',
-        message: 'Możesz edytować tylko swoje posty' 
+        message: 'Możesz edytować tylko swoje posty'
       });
     }
 
     // Aktualizuj post
-    posts[postIndex].content = content.trim();
-    posts[postIndex].updatedAt = new Date().toISOString();
-    writeData('posts.json', posts);
+    db.prepare(`
+      UPDATE posts SET content = ?, updatedAt = ? WHERE id = ?
+    `).run(content.trim(), new Date().toISOString(), postId);
+
+    const updatedPost = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+
+    // Pobierz polubienia
+    const likes = db.prepare(`
+      SELECT userId FROM post_likes WHERE postId = ?
+    `).all(postId).map(row => row.userId);
 
     res.json({
       message: 'Post zaktualizowany',
-      post: posts[postIndex]
+      post: {
+        ...updatedPost,
+        likes
+      }
     });
   } catch (err) {
     next(err);
@@ -217,40 +282,59 @@ router.put('/:id', authenticate, (req, res, next) => {
 router.post('/:id/like', authenticate, (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    const userIdNum = req.user.id;
-    const posts = readData('posts.json');
-    const postIndex = posts.findIndex(p => p.id === postId);
+    const userId = req.user.id;
 
-    if (postIndex === -1) {
-      return res.status(404).json({ 
+    // Sprawdź czy post istnieje
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) {
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
-    const post = posts[postIndex];
+    // Sprawdź czy już polubił
+    const existingLike = db.prepare(`
+      SELECT * FROM post_likes WHERE postId = ? AND userId = ?
+    `).get(postId, userId);
 
-    // Upewnij się, że likes to tablica
-    if (!Array.isArray(post.likes)) {
-      post.likes = [];
-    }
+    if (existingLike) {
+      // Odlajkuj
+      db.prepare(`
+        DELETE FROM post_likes WHERE postId = ? AND userId = ?
+      `).run(postId, userId);
 
-    // Toggle like (jeśli już polubił, odlajkuj)
-    const likeIndex = post.likes.indexOf(userIdNum);
-    if (likeIndex !== -1) {
-      post.likes.splice(likeIndex, 1);
-      writeData('posts.json', posts);
+      const likes = db.prepare(`
+        SELECT userId FROM post_likes WHERE postId = ?
+      `).all(postId).map(row => row.userId);
+
       return res.json({
         message: 'Post odlajkowany',
-        post,
+        post: {
+          ...post,
+          likes
+        },
         liked: false
       });
     } else {
-      post.likes.push(userIdNum);
-      writeData('posts.json', posts);
+      // Polub
+      db.prepare(`
+        INSERT INTO post_likes (postId, userId) VALUES (?, ?)
+      `).run(postId, userId);
+
+      const likes = db.prepare(`
+        SELECT userId FROM post_likes WHERE postId = ?
+      `).all(postId).map(row => row.userId);
+
+      // Stwórz powiadomienie dla właściciela posta
+      createNotification(post.userId, userId, 'like', postId);
+
       return res.json({
         message: 'Post polubiono',
-        post,
+        post: {
+          ...post,
+          likes
+        },
         liked: true
       });
     }
@@ -263,23 +347,23 @@ router.post('/:id/like', authenticate, (req, res, next) => {
 router.get('/:id/comments', (req, res, next) => {
   try {
     const postId = parseInt(req.params.id);
-    
+
     // Sprawdź czy post istnieje
-    const posts = readData('posts.json');
-    const post = posts.find(p => p.id === postId);
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
-    const comments = readData('comments.json');
-    const postComments = comments
-      .filter(c => c.postId === postId)
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Od najstarszych
+    const comments = db.prepare(`
+      SELECT * FROM comments 
+      WHERE postId = ? 
+      ORDER BY createdAt ASC
+    `).all(postId);
 
-    res.json(postComments);
+    res.json(comments);
   } catch (err) {
     next(err);
   }
@@ -293,39 +377,156 @@ router.post('/:id/comments', authenticate, (req, res, next) => {
     const userId = req.user.id;
 
     // Sprawdź czy post istnieje
-    const posts = readData('posts.json');
-    const post = posts.find(p => p.id === postId);
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     if (!post) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
-    // Walidacja komentarza (userId z tokena)
+    // Walidacja komentarza
     const validation = validateCommentCreate({ postId, userId: userId, content });
     if (!validation.isValid) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Błąd walidacji',
-        details: validation.errors 
+        details: validation.errors
       });
     }
 
-    const comments = readData('comments.json');
-    const newComment = {
-      id: comments.length > 0 ? Math.max(...comments.map(c => c.id)) + 1 : 1,
-      postId,
-      userId: userId,
-      content: content.trim(),
-      createdAt: new Date().toISOString()
-    };
+    const insertComment = db.prepare(`
+      INSERT INTO comments (postId, userId, content, createdAt)
+      VALUES (?, ?, ?, ?)
+    `);
 
-    comments.push(newComment);
-    writeData('comments.json', comments);
+    const result = insertComment.run(
+      postId,
+      userId,
+      content.trim(),
+      new Date().toISOString()
+    );
+
+    const newCommentId = result.lastInsertRowid;
+    const newComment = db.prepare('SELECT * FROM comments WHERE id = ?').get(newCommentId);
+
+    // Stwórz powiadomienie dla właściciela posta
+    if (post) {
+      createNotification(post.userId, userId, 'comment', postId);
+    }
 
     res.status(201).json({
       message: 'Komentarz dodany',
       comment: newComment
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PUT /api/posts/:id/comments/:commentId — edytuj komentarz
+router.put('/:id/comments/:commentId', authenticate, (req, res, next) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.commentId);
+    const { content } = req.body;
+    const userId = req.user.id;
+
+    // Sprawdź czy post istnieje
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) {
+      return res.status(404).json({
+        error: 'Nie znaleziono',
+        message: 'Post o podanym ID nie istnieje'
+      });
+    }
+
+    // Walidacja
+    const validation = validateCommentUpdate({ content });
+    if (!validation.isValid) {
+      return res.status(400).json({
+        error: 'Błąd walidacji',
+        details: validation.errors
+      });
+    }
+
+    // Sprawdź czy komentarz istnieje
+    const comment = db.prepare(`
+      SELECT * FROM comments WHERE id = ? AND postId = ?
+    `).get(commentId, postId);
+
+    if (!comment) {
+      return res.status(404).json({
+        error: 'Nie znaleziono',
+        message: 'Komentarz o podanym ID nie istnieje'
+      });
+    }
+
+    // Sprawdź uprawnienia
+    if (comment.userId !== userId) {
+      return res.status(403).json({
+        error: 'Brak dostępu',
+        message: 'Możesz edytować tylko swoje komentarze'
+      });
+    }
+
+    // Aktualizuj komentarz
+    db.prepare(`
+      UPDATE comments SET content = ?, updatedAt = ? WHERE id = ?
+    `).run(content.trim(), new Date().toISOString(), commentId);
+
+    const updatedComment = db.prepare('SELECT * FROM comments WHERE id = ?').get(commentId);
+
+    res.json({
+      message: 'Komentarz zaktualizowany',
+      comment: updatedComment
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/posts/:id/comments/:commentId — usuń komentarz
+router.delete('/:id/comments/:commentId', authenticate, (req, res, next) => {
+  try {
+    const postId = parseInt(req.params.id);
+    const commentId = parseInt(req.params.commentId);
+    const userId = req.user.id;
+
+    // Sprawdź czy post istnieje
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) {
+      return res.status(404).json({
+        error: 'Nie znaleziono',
+        message: 'Post o podanym ID nie istnieje'
+      });
+    }
+
+    // Sprawdź czy komentarz istnieje
+    const comment = db.prepare(`
+      SELECT * FROM comments WHERE id = ? AND postId = ?
+    `).get(commentId, postId);
+
+    if (!comment) {
+      return res.status(404).json({
+        error: 'Nie znaleziono',
+        message: 'Komentarz o podanym ID nie istnieje'
+      });
+    }
+
+    // Sprawdź uprawnienia (autor komentarza lub admin)
+    if (comment.userId !== userId && !req.user.isAdmin) {
+      return res.status(403).json({
+        error: 'Brak dostępu',
+        message: 'Nie możesz usunąć tego komentarza'
+      });
+    }
+
+    // Usuń komentarz
+    db.prepare('DELETE FROM comments WHERE id = ?').run(commentId);
+
+    res.json({
+      message: 'Komentarz usunięty',
+      deletedId: commentId
     });
   } catch (err) {
     next(err);
@@ -338,32 +539,25 @@ router.delete('/:id', authenticate, (req, res, next) => {
     const postId = parseInt(req.params.id);
     const userId = req.user.id;
 
-    const posts = readData('posts.json');
-    const postIndex = posts.findIndex(p => p.id === postId);
-
-    if (postIndex === -1) {
-      return res.status(404).json({ 
+    // Sprawdź czy post istnieje
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+    if (!post) {
+      return res.status(404).json({
         error: 'Nie znaleziono',
-        message: 'Post o podanym ID nie istnieje' 
+        message: 'Post o podanym ID nie istnieje'
       });
     }
 
-    // Sprawdź, czy user jest właścicielem
-    if (posts[postIndex].userId !== userId) {
-      return res.status(403).json({ 
+    // Sprawdź, czy user jest właścicielem lub adminem
+    if (post.userId !== userId && !req.user.isAdmin) {
+      return res.status(403).json({
         error: 'Brak dostępu',
-        message: 'Nie możesz usunąć cudzego posta' 
+        message: 'Nie możesz usunąć cudzego posta'
       });
     }
 
-    // Usuń również komentarze związane z postem
-    const comments = readData('comments.json');
-    const updatedComments = comments.filter(c => c.postId !== postId);
-    writeData('comments.json', updatedComments);
-
-    // Usuń post
-    posts.splice(postIndex, 1);
-    writeData('posts.json', posts);
+    // Usuń post (komentarze i polubienia zostaną usunięte przez CASCADE)
+    db.prepare('DELETE FROM posts WHERE id = ?').run(postId);
 
     res.json({
       message: 'Post usunięty',
@@ -374,5 +568,14 @@ router.delete('/:id', authenticate, (req, res, next) => {
   }
 });
 
-// Eksportuj router — 🔑 to kluczowe!
+// POST /api/posts/upload — upload obrazka
+router.post('/upload', authenticate, upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Błąd', message: 'Nie przesłano pliku' });
+  }
+
+  const imageUrl = `/uploads/${req.file.filename}`;
+  res.json({ imageUrl });
+});
+
 module.exports = router;
