@@ -1,4 +1,5 @@
 // server.js
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -19,18 +20,10 @@ app.use(cors({
 app.use(express.json()); // żeby móc czytać JSON z req.body
 app.use(express.urlencoded({ extended: true })); // dla formularzy
 app.use(express.static(path.join(__dirname, 'public'))); // statyczne pliki (CSS, JS)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Ładowanie danych z plików (mock)
-const DATA_DIR = path.join(__dirname, 'data');
-
-function readData(filename) {
-  const data = fs.readFileSync(path.join(DATA_DIR, filename), 'utf8');
-  return JSON.parse(data);
-}
-
-function writeData(filename, data) {
-  fs.writeFileSync(path.join(DATA_DIR, filename), JSON.stringify(data, null, 2));
-}
+// Inicjalizacja bazy danych SQLite
+require('./database');
 
 // Przykład: zapisz funkcje ładowania do globalnej przestrzeni (tymczasowo)
 app.get('/api/test', (req, res) => {
@@ -41,11 +34,13 @@ app.get('/api/test', (req, res) => {
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const postRoutes = require('./routes/posts');
+const notificationRoutes = require('./routes/notifications');
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Middleware do obsługi błędów
 const errorHandler = require('./middleware/errorHandler');
@@ -57,7 +52,7 @@ app.use((req, res) => {
     return res.status(404).json({ error: 'Endpoint not found', message: `Ścieżka ${req.path} nie istnieje` });
   }
   // W przeciwnym razie renderuj stronę błędu
-  res.status(404).render('error', { 
+  res.status(404).render('error', {
     message: 'Strona nie została znaleziona',
     error: { status: 404 }
   });
