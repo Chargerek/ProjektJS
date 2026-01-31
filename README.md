@@ -5,12 +5,12 @@ w obu przypadkach użytkownik może kliknać na powiadomienie i zostanie przekie
 Panel admina do zarządzania postami i użytkownikami.
 
 ## Podział pracy:
-* Krok 2 - Damian Zdrodowski - Stworzenie początkowej struktury i początkowego backendu
-* Krok 3 - Mateusz Rzodkiewicz - Stworzenie początkowego frontendu i rozbudowa backendu
+* Krok 2 - Damian Zdrodowski - Stworzenie początkowej struktury, backendu i frontendu
+* Krok 3 - Mateusz Rzodkiewicz - Rozbudowa backendu
 * Krok 4 - Kacper Zajkowski - Łączenie frontendu z API
 * Krok 5 - Kacper Zajkowski - Rejestracja, logowanie, uwierzytelnianie, autoryzacja
-* Krok 6 - Mateusz Rzodkiewicz - Połączenie z bazą danych i poprawki 
-* Krok 7 - Damian Zdrodowski - Poprawki końcowe/ Finalizacja projektu
+* Krok 6 - Mateusz Rzodkiewicz - Połączenie z bazą danych  
+* Krok 7 - Damian Zdrodowski - Poprawki końcowe / Finalizacja projektu
 
 
 ## Struktura projektu + krótki opis zawartości
