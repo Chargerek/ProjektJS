@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validateUserRegistration } = require('../models/User');
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-zmienic-w-produkcji';
 const db = require('../database');
 
 // POST /api/auth/register
