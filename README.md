@@ -8,7 +8,7 @@ Panel admina do zarządzania postami i użytkownikami.
 * Krok 2 - Damian Zdrodowski - Stworzenie początkowej struktury, backendu i frontendu
 * Krok 3 - Mateusz Rzodkiewicz - Rozbudowa backendu
 * Krok 4 - Kacper Zajkowski - Łączenie frontendu z API
-* Krok 5 - Kacper Zajkowski - Rejestracja, logowanie, uwierzytelnianie, autoryzacja
+* Krok 5 - Kacper Zajkowski - Uwierzytelnianie, autoryzacja
 * Krok 6 - Mateusz Rzodkiewicz - Połączenie z bazą danych  
 * Krok 7 - Damian Zdrodowski - Poprawki końcowe / Finalizacja projektu
 
