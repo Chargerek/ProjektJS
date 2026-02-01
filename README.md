@@ -17,58 +17,74 @@ Panel admina do zarządzania postami i użytkownikami.
 
 ```Backend + Frontend
 social-app-backend/
-├── uploads/                     # Pliki graficzne użytkowników
+├── uploads/                         # Pliki graficzne użytkowników
 │
-├── routes/                      # Endpointy API
-│   ├── auth.js                   # Logowanie i rejestracja
-│   ├── posts.js                  # Posty, zdjęcia, komentarze, lajki
-│   ├── users.js                  # Profile, obserwowanie, lista użytkowników
-│   └── notifications.js          # Logika powiadomień
+├── routes/                          # Endpointy API
+│   ├── auth.js                       # Logowanie i rejestracja
+│   ├── posts.js                      # Posty, zdjęcia, komentarze, lajki
+│   ├── users.js                      # Profile, obserwowanie, lista użytkowników
+│   ├── notifications.js              # Logika powiadomień
+│   └── frontend.js                   # Obsługa tras frontendu
 │
-├── models/                      # Modele danych + walidacja
-│   ├── User.js                   # Walidacja danych użytkownika
-│   └── Post.js                   # Walidacja postów i komentarzy
+├── models/                          # Modele danych + walidacja
+│   ├── User.js                       # Dane użytkownika
+│   ├── Post.js                       # Posty
+│   └── Comment.js                    # Komentarze
 │
-├── middleware/                  # Middleware aplikacji
-│   └── auth.js                   # JWT + uprawnienia administratora
+├── middleware/                      # Middleware aplikacji
+│   ├── auth.js                       # JWT (autoryzacja)
+│   ├── admin.js                      # Uprawnienia administratora
+│   ├── upload.js                     # Upload plików (np. Multer)
+│   └── errorHandler.js               # Globalna obsługa błędów
 │
-├── database.js                  # Konfiguracja SQLite + schemat tabel
-├── index.js                     # Główny punkt wejścia serwera
-├── social.db                    # Plik bazy danych SQLite
-└── package.json                 # Zależności backendu
+├── data/                            # Pliki bazy danych
+│   └── social_app.db                 # Baza danych SQLite
+│
+├── database.js                      # Konfiguracja SQLite + schemat tabel
+├── server.js                        # Główny punkt wejścia serwera
+├── package.json                     # Zależności backendu
+└── README.md                        # Dokumentacja backendu
  
 
 social-app-frontend/
 ├── src/
-│   ├── components/              # Reużywalne komponenty UI
-│   │   ├── Post.vue
-│   │   ├── Post.css
-│   │   └── UserList.css
+│   ├── components/                  # Reużywalne komponenty UI
+│   ├── ├── Post.vue
+│   │   ├── Toast.vue                 # Komunikaty UI
+│   │   ├── Login.css
+│   │   ├── Register.css
+│   │   └── PostList.css
 │   │
-│   ├── views/                   # Widoki (strony aplikacji)
-│   │   ├── Home.vue
-│   │   ├── PostList.vue          # Główny feed (infinite scroll)
-│   │   ├── Profile.vue           # Profil użytkownika + edycja i kadrowanie
-│   │   ├── UserList.vue          # Wyszukiwarka użytkowników
-│   │   ├── Notifications.vue     # Lista powiadomień
-│   │   └── PostDetails.vue       # Szczegóły posta
+│   ├── views/                       # Widoki aplikacji
+│   │   ├── PostList.vue              # Główny feed (infinite scroll)
+│   │   ├── Profile.vue               # Profil użytkownika
+│   │   ├── UserList.vue              # Wyszukiwarka użytkowników
+│   │   ├── Notifications.vue         # Powiadomienia
+│   │   ├── PostDetails.vue           # Szczegóły posta
+│   │   ├── Login.vue                 # Logowanie
+│   │   ├── Register.vue              # Rejestracja
+│   │   └── AdminPanel.vue            # Panel administratora
 │   │
-│   ├── stores/                  # Zarządzanie stanem (Pinia)
-│   │   ├── auth.js               # Sesja użytkownika
-│   │   ├── theme.js              # Motywy kolorystyczne
-│   │   └── toast.js              # System powiadomień UI
+│   ├── stores/                      # Pinia – stan aplikacji
+│   │   ├── auth.js                   # Sesja użytkownika
+│   │   ├── theme.js                  # Motywy kolorystyczne
+│   │   └── toast.js                  # Powiadomienia UI
 │   │
-│   ├── services/                # Warstwa komunikacji z API
-│   │   └── api.js                # Centralna konfiguracja fetch
+│   ├── services/                    # Komunikacja z API
+│   │   └── api.js                    # Centralna konfiguracja fetch
 │   │
-│   ├── router/                  # Routing aplikacji
-│   │   └── index.js              # Konfiguracja tras
+│   ├── router/                      # Routing
+│   │   └── index.js                  # Definicja tras
 │   │
-│   ├── App.vue                  # Główny szablon aplikacji
-│   └── main.js                  # Inicjalizacja Vue
+│   ├── App.vue                      # Główny layout aplikacji
+│   └── main.js                      # Inicjalizacja Vue
 │
-├── index.html                   # Główny plik HTML
-└── package.json                 # Zależności frontendu
+├── index.html                       # Główny plik HTML
+├── vite.config.js                   # Konfiguracja Vite
+├── eslint.config.js                 # Konfiguracja ESLint
+├── package.json                     # Zależności frontendu
+└── README.md                        # Dokumentacja frontendu
+
 
 ```
 ## Jak uruchomić aplikacje:
